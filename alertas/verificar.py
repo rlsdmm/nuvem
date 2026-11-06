@@ -9,7 +9,7 @@ import json, os, sys, time, urllib.parse, urllib.request
 from datetime import date, datetime, timedelta
 
 LUGAR = {"nome": "Miguelópolis", "lat": -20.17944, "lon": -48.03194}
-APP = "https://rlsdmm.github.io/firmamento/"
+APP = "https://rlsdmm.github.io/nuvem/"
 TROVOADA = (95, 96, 99)
 CHUVA_FORTE_MM = 5    # mm/h junto com trovoada
 RAJADA_KMH = 50
