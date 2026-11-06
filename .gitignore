@@ -1,0 +1,4 @@
+# Publica somente o app; dados e testes ficam neste computador
+*
+!index.html
+!.gitignore
