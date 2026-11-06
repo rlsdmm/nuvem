@@ -1,5 +1,5 @@
 /* Guarda os arquivos do app para abrir sem internet. A previsão é salva pela própria página. */
-const VERSAO = "firmamento-1";
+const VERSAO = "firmamento-2";
 const FONTES = "firmamento-fontes";
 const ARQUIVOS = ["./", "manifest.webmanifest", "icones/icone-192.png", "icones/icone-512.png",
   "icones/icone-mascara-512.png", "icones/icone-apple-180.png", "icones/favicon-32.png"];
@@ -38,6 +38,22 @@ async function fonte(req) {
   if (r.ok || r.type === "opaque") await cache.put(req, r.clone());
   return r;
 }
+
+// Alertas de tempestade, enviados pela tarefa em alertas/verificar.py
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data.json(); } catch { /* sem conteúdo: mostra o aviso genérico */ }
+  e.waitUntil(self.registration.showNotification(d.titulo || "Firmamento", {
+    body: d.corpo || "Abra o app para ver a previsão.", icon: "icones/icone-192.png", tag: d.tag, data: { url: d.url || "./" } }));
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((abertas) => {
+    const janela = abertas.find((c) => "focus" in c);
+    return janela ? janela.focus() : self.clients.openWindow(new URL(e.notification.data?.url || "./", self.registration.scope).href);
+  }));
+});
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;

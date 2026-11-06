@@ -1,8 +1,14 @@
-# Publica somente o app; dados e testes ficam neste computador
+# Publica somente o app e os alertas; dados e testes ficam neste computador
 *
 !index.html
 !manifest.webmanifest
 !sw.js
 !icones/
 !icones/*
+!alertas/
+!alertas/verificar.py
+!alertas/requirements.txt
+!.github/
+!.github/workflows/
+!.github/workflows/alertas.yml
 !.gitignore

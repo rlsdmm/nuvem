@@ -160,6 +160,9 @@ button, input { font: inherit; color: inherit; }
 .notice { padding: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .notice p { margin: 0; }
 .toast { font-size: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin: 0; }
+#alertas .btn { margin-top: 10px; }
+#alertas-texto { display: block; width: 100%; margin-top: 8px; padding: 8px; font: 12px/1.35 ui-monospace, Consolas, monospace; color: var(--ink);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; resize: vertical; }
 footer { color: var(--muted); font-size: 13px; }
 footer a { color: inherit; }
 #main.loading { opacity: .55; transition: opacity .2s; }
@@ -197,6 +200,17 @@ footer a { color: inherit; }
   </div>
   <p id="toast" class="toast" role="status" hidden></p>
   <main id="main" class="wrap" aria-live="polite"></main>
+  <section class="panel" id="alertas">
+    <h2>Alertas de tempestade</h2>
+    <p class="note">Avisos para Miguelópolis quando a previsão indica trovoada com chuva forte ou rajadas de 50 km/h ou mais. A previsão pode errar: sem alerta não quer dizer sem tempestade.</p>
+    <button id="ativar-alertas" class="btn" type="button">Ativar alertas</button>
+    <p id="alertas-msg" class="note" role="status" hidden></p>
+    <div id="alertas-codigo" hidden>
+      <p class="note">Falta cadastrar este aparelho. Copie o código abaixo e envie para quem cuida do app.</p>
+      <textarea id="alertas-texto" readonly rows="4" aria-label="Código deste aparelho"></textarea>
+      <button id="alertas-copiar" class="btn" type="button">Copiar código</button>
+    </div>
+  </section>
   <footer>Dados de <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>. Horários na hora local da cidade.</footer>
 </div>
 
@@ -953,6 +967,39 @@ function drawFrame(t, move) {
 }
 function tick(t) { drawFrame(t, true); raf = requestAnimationFrame(tick); }
 addEventListener("resize", resize);
+
+/* ---------- Alertas de tempestade: gera o código que cadastra este aparelho ---------- */
+const VAPID_PUBLICA = "BB3XFSGF-L5ZahAoEiRFneKc-3P2Tag8yITWLg-YnGZLTjKWJ_s9uyLFV2bqHlctIEAHlOOHmOznPfeusyWRoEk";
+function alertaMsg(texto) { $("alertas-msg").textContent = texto; $("alertas-msg").hidden = !texto; }
+$("ativar-alertas").addEventListener("click", async () => {
+  $("alertas-codigo").hidden = true;
+  if (!("serviceWorker" in navigator && "PushManager" in window && "Notification" in window)) {
+    alertaMsg("Este navegador não recebe notificações. No iPhone, instale o app na tela inicial pelo Safari (iOS 16.4 ou mais novo) e abra por lá.");
+    return;
+  }
+  try {
+    alertaMsg("Ativando...");
+    if (await Notification.requestPermission() !== "granted") {
+      alertaMsg("As notificações estão bloqueadas. Libere nas configurações do aparelho para este app e tente de novo.");
+      return;
+    }
+    const reg = await Promise.race([navigator.serviceWorker.ready,
+      new Promise((_, falha) => setTimeout(() => falha(new Error("sem service worker")), 10000))]);
+    const chave = Uint8Array.from(atob(VAPID_PUBLICA.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+    const inscricao = await reg.pushManager.getSubscription()
+      || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chave });
+    $("alertas-texto").value = JSON.stringify(inscricao);
+    $("alertas-codigo").hidden = false;
+    alertaMsg("");
+  } catch (e) {
+    alertaMsg("Não consegui ativar os alertas neste aparelho. Verifique a conexão e tente de novo.");
+  }
+});
+$("alertas-copiar").addEventListener("click", async () => {
+  const campo = $("alertas-texto");
+  try { await navigator.clipboard.writeText(campo.value); alertaMsg("Código copiado."); }
+  catch { campo.focus(); campo.select(); alertaMsg("Não consegui copiar sozinho. O código está selecionado: copie pelo menu do aparelho."); }
+});
 
 /* ---------- Início ---------- */
 const first = store.get("firmamento.ultimo", null);

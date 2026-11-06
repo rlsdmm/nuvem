@@ -1,0 +1,49 @@
+name: Alertas de tempestade
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      teste:
+        description: Mandar só uma notificação de teste
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alertas
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      # O estado fica em um ramo separado para não republicar o site a cada alerta
+      - uses: actions/checkout@v4
+        with:
+          ref: alertas-estado
+          path: estado
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q -r alertas/requirements.txt
+      - name: Verificar previsão
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          PUSH_SUBSCRIPTIONS: ${{ secrets.PUSH_SUBSCRIPTIONS }}
+          TESTE: ${{ inputs.teste }}
+        run: python alertas/verificar.py estado/estado.json
+      - name: Guardar estado
+        if: always()
+        working-directory: estado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add estado.json
+          git diff --cached --quiet || { git commit -qm "Atualiza estado dos alertas"; git push -q; }
