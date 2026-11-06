@@ -105,7 +105,7 @@ def main():
     arquivo = sys.argv[1]
     if os.environ.get("TESTE") == "true":
         certos, falhas = enviar({"chave": "teste", "titulo": "Nuvem: teste de alerta",
-                                 "corpo": "Se você está vendo isto, os alertas de tempestade estão funcionando.", "url": APP})
+                                 "corpo": "Os alertas de tempestade estão funcionando. Este teste chega todo domingo de manhã: se faltar, os alertas podem ter parado.", "url": APP})
         print(f"Teste: {certos} enviados, {falhas} falhas")
         return 1 if falhas or not certos else 0
 
