@@ -1,4 +1,8 @@
 # Publica somente o app; dados e testes ficam neste computador
 *
 !index.html
+!manifest.webmanifest
+!sw.js
+!icones/
+!icones/*
 !.gitignore
