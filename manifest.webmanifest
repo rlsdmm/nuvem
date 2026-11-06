@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Firmamento",
-  "short_name": "Firmamento",
+  "name": "Nuvem",
+  "short_name": "Nuvem",
   "description": "Previsão do tempo e melhores dias e horários para pescar.",
   "lang": "pt-BR",
   "start_url": "./",

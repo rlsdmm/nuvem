@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Firmamento</title>
+<title>Nuvem</title>
 <meta name="description" content="Previsão do tempo e melhores dias e horários para pescar.">
 <meta name="theme-color" content="#0a4f96">
 <link rel="manifest" href="manifest.webmanifest">
@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icones/icone-apple-180.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Firmamento">
+<meta name="apple-mobile-web-app-title" content="Nuvem">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -185,7 +185,7 @@ footer a { color: inherit; }
 <canvas id="sky" aria-hidden="true"></canvas>
 <div class="wrap">
   <header class="top">
-    <h1 class="brand">Firmamento</h1>
+    <h1 class="brand">Nuvem</h1>
     <div class="search">
       <input id="q" type="search" placeholder="Buscar cidade" autocomplete="off" role="combobox"
         aria-label="Buscar cidade" aria-expanded="false" aria-controls="results" aria-autocomplete="list">
@@ -440,7 +440,7 @@ function render(place, d) {
   document.body.dataset.sky = skyFor(d);
   document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.body).getPropertyValue("--sky-top").trim();
   setScene(kind, c.weather_code, !!c.is_day);
-  document.title = `${round(c.temperature_2m)}° em ${place.name} | Firmamento`;
+  document.title = `${round(c.temperature_2m)}° em ${place.name} | Nuvem`;
   lastPlace = place; lastData = d;
   $("main").innerHTML = `<div id="view-tempo" class="wrap" role="tabpanel" aria-labelledby="tab-tempo">
     <section class="hero">
