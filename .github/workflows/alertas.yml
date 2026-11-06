@@ -2,8 +2,10 @@ name: Alertas de tempestade
 
 on:
   schedule:
-    - cron: "17 * * * *"
-    - cron: "0 12 * * 0" # teste semanal: domingo, 9h em Brasília
+    # O GitHub pode atrasar ou descartar execuções: duas por hora, fora dos minutos mais cheios
+    - cron: "23 * * * *"
+    - cron: "53 * * * *"
+    - cron: "7 12 * * 0" # teste semanal: domingo, 9h07 em Brasília
   workflow_dispatch:
     inputs:
       teste:
@@ -38,7 +40,7 @@ jobs:
         env:
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           PUSH_SUBSCRIPTIONS: ${{ secrets.PUSH_SUBSCRIPTIONS }}
-          TESTE: ${{ inputs.teste || github.event.schedule == '0 12 * * 0' }}
+          TESTE: ${{ inputs.teste || github.event.schedule == '7 12 * * 0' }}
         run: python alertas/verificar.py estado/estado.json
       - name: Guardar estado
         if: always()

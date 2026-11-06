@@ -1,6 +1,6 @@
 """Consulta a previsão de Miguelópolis e avisa os celulares cadastrados quando há risco de tempestade.
 
-Roda de hora em hora no GitHub Actions. Segredos, nas variáveis de ambiente:
+Roda duas vezes por hora no GitHub Actions; o estado evita repetir um alerta já enviado. Segredos, nas variáveis de ambiente:
   VAPID_PRIVATE_KEY   chave de envio
   PUSH_SUBSCRIPTIONS  lista JSON com os códigos gerados pelo botão "Ativar alertas" do app
 Uso: verificar.py <arquivo de estado>; com TESTE=true só manda uma notificação de teste.
