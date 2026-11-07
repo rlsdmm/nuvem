@@ -164,7 +164,8 @@ button, input { font: inherit; color: inherit; }
 .notice { padding: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .notice p { margin: 0; }
 .toast { font-size: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin: 0; }
-#alertas .btn { margin-top: 10px; }
+#alertas .btn, #instalar-ajuda .btn { margin-top: 10px; }
+#instalar-ajuda ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
 #alertas-texto { display: block; width: 100%; margin-top: 8px; padding: 8px; font: 12px/1.35 ui-monospace, Consolas, monospace; color: var(--ink);
   background: var(--panel); border: 1px solid var(--line); border-radius: 8px; resize: vertical; }
 footer { color: var(--muted); font-size: 13px; }
@@ -200,7 +201,23 @@ footer a { color: inherit; }
       <ul id="results" class="results" role="listbox" aria-label="Cidades encontradas" data-en-aria-label="Cities found" hidden></ul>
     </div>
     <button id="locate" class="btn" type="button" data-en="Use my location">Usar minha localização</button>
+    <button id="instalar" class="btn" type="button" aria-expanded="false" aria-controls="instalar-ajuda" data-en="Install app" hidden>Instalar app</button>
   </header>
+  <section class="panel" id="instalar-ajuda" hidden>
+    <h2 data-en="Install Nuvem">Instalar o Nuvem</h2>
+    <ol id="instalar-ios" hidden>
+      <li data-en="Open this page in Safari.">Abra esta página no Safari.</li>
+      <li data-en="Tap Share, the square with an arrow pointing up. If you can't see it, tap ··· first.">Toque em Compartilhar, o quadrado com uma seta para cima. Se não aparecer, toque em ··· antes.</li>
+      <li data-en="Tap “Add to Home Screen”, then “Add”. If it's not listed, tap “View More” or scroll down.">Toque em “Adicionar à Tela de Início” e depois em “Adicionar”. Se não estiver na lista, toque em “Ver Mais” ou role para baixo.</li>
+      <li data-en="Open Nuvem from the new icon. On iPhone, storm alerts only work from there.">Abra o Nuvem pelo novo ícone. No iPhone, os alertas de tempestade só funcionam por ali.</li>
+    </ol>
+    <ol id="instalar-android" hidden>
+      <li data-en="Open your browser menu (⋮ or ☰).">Abra o menu do navegador (⋮ ou ☰).</li>
+      <li data-en="Choose “Install app” or “Add to Home screen”.">Escolha “Instalar app” ou “Adicionar à tela inicial”.</li>
+      <li data-en="Confirm and open Nuvem from the new icon. If it's already installed, just open it from the icon.">Confirme e abra o Nuvem pelo novo ícone. Se já estiver instalado, é só abrir por ele.</li>
+    </ol>
+    <button id="instalar-fechar" class="btn" type="button" data-en="Close">Fechar</button>
+  </section>
   <nav id="chips" class="chips" aria-label="Cidades recentes" data-en-aria-label="Recent cities"></nav>
   <div class="tabs" role="tablist" aria-label="Seções do app" data-en-aria-label="App sections">
     <button class="tab" type="button" role="tab" id="tab-tempo" data-view="tempo" aria-selected="true" data-en="Weather">Tempo</button>
@@ -1061,6 +1078,38 @@ $("alertas-copiar").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(campo.value); alertaMsg(() => L("Código copiado.", "Code copied.")); }
   catch { campo.focus(); campo.select(); alertaMsg(() => L("Não consegui copiar sozinho. O código está selecionado: copie pelo menu do aparelho.", "Could not copy automatically. The code is selected: copy it from your device's menu.")); }
 });
+
+/* ---------- Instalar: o Android abre o pedido do navegador; o iPhone não permite, então mostra os passos ---------- */
+const SISTEMA = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ? "ios"
+  : /Android/.test(navigator.userAgent) ? "android" : null;
+let instalado = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+let pedidoInstalar = null;
+function mostrarPassos(ver) {
+  $("instalar-ajuda").hidden = !ver;
+  $("instalar").setAttribute("aria-expanded", ver);
+}
+function atualizarInstalar() {
+  $("instalar").hidden = instalado || !(pedidoInstalar || SISTEMA);
+  if (instalado) mostrarPassos(false);
+}
+if (SISTEMA) $(`instalar-${SISTEMA}`).hidden = false;
+addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault(); // o pedido fica para quando a pessoa tocar no botão
+  pedidoInstalar = e;
+  mostrarPassos(false);
+  atualizarInstalar();
+});
+addEventListener("appinstalled", () => { instalado = true; atualizarInstalar(); });
+$("instalar").addEventListener("click", async () => {
+  if (!pedidoInstalar) { mostrarPassos($("instalar-ajuda").hidden); return; }
+  const pedido = pedidoInstalar;
+  pedidoInstalar = null; // o navegador só aceita usar cada pedido uma vez
+  await pedido.prompt();
+  await pedido.userChoice;
+  atualizarInstalar();
+});
+$("instalar-fechar").addEventListener("click", () => { mostrarPassos(false); $("instalar").focus(); });
+atualizarInstalar();
 
 /* ---------- Início ---------- */
 applyStatic();
