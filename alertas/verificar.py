@@ -3,10 +3,11 @@
 Roda duas vezes por hora no GitHub Actions; o estado evita repetir um alerta já enviado. Segredos, nas variáveis de ambiente:
   VAPID_PRIVATE_KEY   chave de envio
   PUSH_SUBSCRIPTIONS  lista JSON com os códigos gerados pelo botão "Ativar alertas" do app
+Se a previsão não responder, só falha (e gera e-mail) depois de TOLERANCIA_MIN minutos seguidos sem ela.
 Uso: verificar.py <arquivo de estado>; com TESTE=true só manda uma notificação de teste.
 """
 import json, os, sys, time, urllib.parse, urllib.request
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 LUGAR = {"nome": "Miguelópolis", "lat": -20.17944, "lon": -48.03194}
 APP = "https://rlsdmm.github.io/nuvem/"
@@ -17,6 +18,7 @@ HORAS_A_FRENTE = 36
 PERTO_HORAS = 3       # segundo aviso, quando a tempestade está a poucas horas
 SILENCIO = (22, 6)    # sem notificação das 22h às 6h, na hora local
 PULSO_DIAS = 30       # grava o estado para o GitHub não pausar a tarefa por inatividade
+TOLERANCIA_MIN = 60   # quedas curtas da previsão não geram e-mail de falha; depois disso, sim
 
 
 def previsao():
@@ -114,7 +116,20 @@ def main():
             estado = json.load(f)
     except (OSError, ValueError):
         estado = {}
-    d = previsao()
+    try:
+        d = previsao()
+    except OSError:
+        # Guarda quando a falha começou; só falha de verdade se a previsão ficar fora por mais tempo
+        agora = datetime.now(timezone.utc)
+        desde = datetime.fromisoformat(estado.setdefault("sem_previsao_desde", agora.isoformat(timespec="seconds")))
+        minutos = (agora - desde).total_seconds() / 60
+        gravar(arquivo, estado)
+        if minutos > TOLERANCIA_MIN:
+            print(f"Sem previsão há {round(minutos)} minutos: os alertas estão parados.")
+            raise
+        print(f"Sem previsão há {round(minutos)} minutos. A próxima verificação tenta de novo.")
+        return 0
+    estado.pop("sem_previsao_desde", None)
     hoje = d["current"]["time"][:10]
     print("Horas de risco:", [x["t"].isoformat() for x in horas_de_risco(d)])
 
@@ -131,9 +146,13 @@ def main():
     pulso = estado.get("pulso")
     if not pulso or date.fromisoformat(hoje) - date.fromisoformat(pulso) >= timedelta(days=PULSO_DIAS):
         estado["pulso"] = hoje
+    gravar(arquivo, estado)
+    return 1 if falhas else 0  # falha aparece no GitHub e gera e-mail: alerta perdido não pode passar em silêncio
+
+
+def gravar(arquivo, estado):
     with open(arquivo, "w", encoding="utf-8") as f:
         json.dump(estado, f, ensure_ascii=False, indent=1)
-    return 1 if falhas else 0  # falha aparece no GitHub e gera e-mail: alerta perdido não pode passar em silêncio
 
 
 if __name__ == "__main__":
